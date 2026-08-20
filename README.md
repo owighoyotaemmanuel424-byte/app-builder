@@ -1,77 +1,110 @@
 # PATCHBAY 🚀
 
-PATCHBAY is a mobile-first AI-powered web app builder: describe an idea, choose an AI provider, generate a structured application, iterate through streaming chat, inspect generated files, preview the result, and deploy.
+PATCHBAY is a production-oriented, mobile-first AI web app builder. Users describe an application, select an AI provider/model, generate structured source files, iterate through builder chat, inspect files, preview the result, and deploy.
 
-## Current architecture
+## Architecture
 
-- Next.js + TypeScript + Tailwind CSS + Framer Motion
-- **Convex** for the application database, queries, mutations, and realtime data
-- Convex schema for users, AI providers, projects, project files, conversations, messages, generations, and deployments
-- Per-user project ownership model
-- Server-side protection for AI provider credentials
-- OpenAI, Gemini, DeepSeek, Groq, OpenRouter and GLM provider abstraction
-- Structured AI project generation
-- Streaming project chat
-- Project/file persistence through Convex
-- Vercel deployment workflow
-- Responsive PATCHBAY composer and builder UI
+- **Next.js + TypeScript** — application UI and server routes
+- **Tailwind CSS + Framer Motion** — responsive product UI
+- **Convex** — primary application database, queries, mutations, realtime synchronization, and backend functions
+- **AI provider abstraction** — OpenAI, Gemini, DeepSeek, Groq, OpenRouter, and GLM
+- **Isolated runtime** — generated applications must be built/executed outside the PATCHBAY server process
+- **Vercel** — deployment target
 
-## Convex setup
+## Convex is the source of truth
 
-1. Install dependencies:
+Do not add new Prisma/PostgreSQL persistence code. The application data model lives in `convex/schema.ts`.
 
-   ```bash
-   npm install
-   ```
+### Convex tables
 
-2. Authenticate and create/configure your Convex development deployment:
+| Table | Purpose |
+|---|---|
+| `users` | PATCHBAY accounts |
+| `aiProviders` | User AI-provider configuration |
+| `projects` | Generated applications |
+| `projectFiles` | Generated source files |
+| `conversations` | Builder sessions |
+| `messages` | Builder messages |
+| `generations` | AI generation jobs/status |
+| `deployments` | Deployment records/status/URLs |
 
-   ```bash
-   npx convex dev
-   ```
+### Convex modules
 
-3. Convex generates the deployment configuration and `convex/_generated` files. Configure the resulting `NEXT_PUBLIC_CONVEX_URL` for the Next.js application.
+- `convex/schema.ts` — schema and indexes
+- `convex/auth.ts` — user lookup helpers
+- `convex/projects.ts` — project and file mutations
+- `convex/files.ts` — realtime file queries/mutations
+- `convex/aiProviders.ts` — provider configuration
+- `convex/conversations.ts` — conversations/messages
+- `convex/generations.ts` — generation jobs
+- `convex/deployments.ts` — deployment records
+- `convex/http.ts` — Convex HTTP router
 
-4. Start Next.js:
+## Local development
 
-   ```bash
-   npm run dev
-   ```
+```bash
+npm install
+npx convex dev
+npm run dev
+```
 
-5. Deploy Convex functions/schema to production:
+Keep the Convex dev process running while developing so schema/functions and generated `convex/_generated` bindings stay synchronized.
 
-   ```bash
-   npm run convex:deploy
-   ```
+Configure the generated Convex deployment URL as:
 
-## Data model
+```env
+NEXT_PUBLIC_CONVEX_URL=...
+```
 
-The Convex schema is the source of truth for application persistence. The main tables are:
+Production Convex deployment:
 
-- `users` — PATCHBAY accounts
-- `aiProviders` — user provider configurations and encrypted/server-protected key material
-- `projects` — generated applications
-- `projectFiles` — generated source files
-- `conversations` — builder conversations
-- `messages` — user/assistant/system messages
-- `generations` — AI generation jobs and status
-- `deployments` — deployment records and URLs
+```bash
+npm run convex:deploy
+```
 
-## Security
+## Security requirements
 
-Generated applications are **untrusted code**. They must be built and executed in an isolated sandbox/runtime and never directly inside the PATCHBAY application process.
+1. **Never expose raw AI API keys to client components.**
+2. Store only encrypted/protected key material or server-side secret references.
+3. Every private Convex query/mutation must verify user ownership before reading or modifying private records.
+4. Generated application code is untrusted and must run in an isolated sandbox/runtime.
+5. Never execute generated code in the PATCHBAY Next.js/Convex process.
+6. Never put Vercel, GitHub, or AI credentials into generated files.
+7. Validate generated file paths and enforce project boundaries.
 
-AI provider credentials must remain server-side. Never expose raw API keys to browser components, generated source files, logs, or client-side state. Convex queries and mutations must validate user/project ownership before reading or changing private data.
+## Builder flow
 
-## AI providers
+1. User onboarding
+2. AI provider connection
+3. Project prompt
+4. Provider/model selection
+5. Structured generation
+6. Convex persistence
+7. Streaming builder conversation
+8. Realtime generated-file updates
+9. Isolated live preview
+10. Iteration/patching
+11. Save project
+12. Deploy
+13. Share
 
-PATCHBAY supports an abstraction layer for multiple AI providers. Provider credentials are configured through the application and stored using protected server-side handling. The UI should never receive raw stored keys.
+## Deployment environment
 
-## Deployment
+Typical server-side secrets include:
 
-Set `VERCEL_TOKEN` server-side to enable the Vercel deployment workflow. Deployment credentials must never be written into generated project files.
+```env
+CONVEX_DEPLOY_KEY=...
+VERCEL_TOKEN=...
+GITHUB_TOKEN=...
+```
 
-## Development commands
+Never expose these values through `NEXT_PUBLIC_*` variables.
+
+## Current migration status
+
+**Database migration: Convex-first.** The Convex schema and core realtime data APIs are implemented. Remaining application integration should use the Convex generated client/functions rather than Prisma.
+
+## Commands
 
 ```bash
 npm run dev
@@ -80,7 +113,3 @@ npm run start
 npm run convex:dev
 npm run convex:deploy
 ```
-
-## Migration status
-
-The persistence layer is being migrated from the original PostgreSQL/Prisma implementation to Convex. New persistence code should use Convex rather than Prisma. Do not introduce new Prisma models or database calls.
