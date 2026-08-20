@@ -1,8 +1,6 @@
 {
-  "name":"patchbay",
-  "version":"1.0.0",
-  "private":true,
+  "name":"patchbay","version":"1.0.0","private":true,
   "scripts":{"dev":"next dev","build":"prisma generate && next build","start":"next start","lint":"next lint","db:push":"prisma db push"},
-  "dependencies":{"@prisma/client":"latest","ai":"latest","framer-motion":"latest","lucide-react":"latest","next":"latest","next-auth":"latest","react":"latest","react-dom":"latest","zod":"latest","clsx":"latest","tailwind-merge":"latest"},
+  "dependencies":{"@prisma/client":"latest","ai":"latest","framer-motion":"latest","lucide-react":"latest","next":"latest","next-auth":"latest","bcryptjs":"latest","react":"latest","react-dom":"latest","zod":"latest","clsx":"latest","tailwind-merge":"latest"},
   "devDependencies":{"@types/node":"latest","@types/react":"latest","@types/react-dom":"latest","prisma":"latest","tailwindcss":"latest","typescript":"latest"}
 }
